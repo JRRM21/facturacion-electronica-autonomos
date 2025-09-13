@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Facturación Electrónica para Autónomos</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 1em; }
+    input, textarea { width: 100%; margin-bottom: 1em; padding: 0.5em; }
+    button { padding: 0.5em 1em; font-size: 1em; }
+    .output { white-space: pre-wrap; border: 1px solid #ccc; padding: 1em; margin-top: 1em; }
+  </style>
+</head>
+<body>
+  <h1>Generador Factura Electrónica Autónomos</h1>
+  <form id="facturaForm">
+    <label>Nombre o razón social (emisor):
+      <input type="text" id="emisorNombre" required>
+    </label>
+    <label>NIF emisor:
+      <input type="text" id="emisorNIF" required pattern="[A-Za-z0-9]{9}">
+    </label>
+    <label>Domicilio emisor:
+      <textarea id="emisorDomicilio" required></textarea>
+    </label>
+    <label>Nombre o razón social cliente:
+      <input type="text" id="clienteNombre" required>
+    </label>
+    <label>NIF cliente:
+      <input type="text" id="clienteNIF" required pattern="[A-Za-z0-9]{9}">
+    </label>
+    <label>Domicilio cliente:
+      <textarea id="clienteDomicilio" required></textarea>
+    </label>
+    <label>Número de factura:
+      <input type="number" id="numeroFactura" min="1" required>
+    </label>
+    <label>Fecha emisión:
+      <input type="date" id="fechaEmision" required>
+    </label>
+    <label>Fecha servicio (opcional):
+      <input type="date" id="fechaServicio">
+    </label>
+    <label>Concepto:
+      <textarea id="concepto" required></textarea>
+    </label>
+    <label>Base imponible (€):
+      <input type="number" id="baseImponible" min="0" step="0.01" required>
+    </label>
+    <label>IVA (%):
+      <input type="number" id="iva" value="21" min="0" max="100" step="0.01" required>
+    </label>
+    <label>Retención IRPF (%):
+      <input type="number" id="retencion" value="15" min="0" max="100" step="0.01">
+    </label>
+    <label>Forma de pago:
+      <input type="text" id="formaPago" required>
+    </label>
+    <label>Cuenta bancaria (IBAN):
+      <input type="text" id="cuentaBancaria">
+    </label>
+    <label>Observaciones:
+      <textarea id="observaciones"></textarea>
+    </label>
+    <button type="submit">Generar Factura</button>
+  </form>
+  <div class="output" id="resultado"></div>
+  <button id="descargarPDF" style="display:none;">Descargar PDF</button>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    const form = document.getElementById('facturaForm');
+    const resultado = document.getElementById('resultado');
+    const descargarPDFBtn = document.getElementById('descargarPDF');
+    let ultimoTextoFactura = '';
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+
+      const emisorNombre = form.emisorNombre.value.trim();
+      const emisorNIF = form.emisorNIF.value.trim();
+      const emisorDomicilio = form.emisorDomicilio.value.trim();
+      const clienteNombre = form.clienteNombre.value.trim();
+      const clienteNIF = form.clienteNIF.value.trim();
+      const clienteDomicilio = form.clienteDomicilio.value.trim();
+      const numeroFactura = Number(form.numeroFactura.value);
+      const fechaEmision = form.fechaEmision.value;
+      const fechaServicio = form.fechaServicio.value || 'N/A';
+      const concepto = form.concepto.value.trim();
+      const baseImponible = Number(form.baseImponible.value);
+      const ivaPct = Number(form.iva.value);
+      const retencionPct = Number(form.retencion.value) || 0;
+      const formaPago = form.formaPago.value.trim();
+      const cuentaBancaria = form.cuentaBancaria.value.trim() || 'No especificada';
+      const observaciones = form.observaciones.value.trim() || 'Ninguna';
+
+      const ivaAmt = (baseImponible * ivaPct) / 100;
+      const retencionAmt = (baseImponible * retencionPct) / 100;
+      const totalPagar = baseImponible + ivaAmt - retencionAmt;
+
+      const textoFactura = `
+FACTURA Nº: ${numeroFactura}
+Fecha emisión: ${fechaEmision}
+Fecha servicio: ${fechaServicio}
+
+Emisor:
+Nombre/Razón social: ${emisorNombre
